@@ -11,6 +11,21 @@ const STATE = {
 const SIZES = ["전체", "소형", "중형", "대형"];
 // ✅ 난이도(한글 표시) 순서 고정 + 개발중 제거
 const DIFF_ORDER = ["키즈","베이직","여름","이지","우주","노말","산타","하드","챌린저"];
+const PERIODS = ["전체", "오늘", "한달"];
+
+function getPeriodStart(){
+  const now = new Date();
+
+  if (STATE.month === "오늘") {
+    const s = new Date(now);
+    s.setHours(0,0,0,0);
+    return s;
+  }
+  if (STATE.month === "한달") {
+    return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 최근 30일
+  }
+  return null; // "전체"
+}
 
 function normalizeDiff(raw){
   let s = (raw || "").toString().trim();
@@ -112,65 +127,65 @@ function setButtons(containerId, items, activeValue, onClick){
 function refreshFilterButtons(){
   // 월 버튼: 데이터에 있는 월들
 // ✅ 월 버튼: "전체" + 데이터에 있는 월들
-  const monthsRaw = [...new Set(RAW.map(r => r.month))].filter(Boolean).sort().reverse();
-  const months = ["전체", ...monthsRaw];
-  
-  // 기본값/유효성 보정
-  if (!STATE.month) STATE.month = "전체";
-  if (!months.includes(STATE.month)) STATE.month = "전체";
+function refreshFilterButtons(){
+  // ✅ 기간 버튼: 전체/오늘/한달
+  if (!PERIODS.includes(STATE.month)) STATE.month = "전체";
 
   // 사이즈 버튼은 고정
   setButtons("sizeSeg", SIZES, STATE.size, (v) => {
     STATE.size = v;
-    // 사이즈 바뀌면 난이도 선택이 유효한지 재검증
     if (!getDiffList().includes(STATE.diff)) STATE.diff = "전체";
     renderRanking();
   });
 
-  // 난이도 버튼: 현재 (월 + 사이즈)에서 존재하는 난이도만
+  // 난이도 버튼: 현재 (기간 + 사이즈)에서 존재하는 난이도만
   const diffs = getDiffList();
   setButtons("diffSeg", diffs, STATE.diff, (v) => {
     STATE.diff = v;
     renderRanking();
   });
 
-  // 월 버튼
-  setButtons("monthSeg", months, STATE.month, (v) => {
+  // ✅ 기간 버튼
+  setButtons("monthSeg", PERIODS, STATE.month, (v) => {
     STATE.month = v;
-    // 월 바뀌면 난이도 목록도 바뀔 수 있음
     if (!getDiffList().includes(STATE.diff)) STATE.diff = "전체";
     renderRanking();
   });
 }
 
+
 function getDiffList(){
   const exists = new Set();
+  const start = getPeriodStart();
 
   for (const r of RAW) {
     if (r.isDev) continue;
-    if (STATE.month !== "전체" && r.month !== STATE.month) continue;
+    if (start && (!r.t || r.t < start)) continue;     // ✅ 기간 필터
     if (STATE.size !== "전체" && r.size !== STATE.size) continue;
     if (r.diff) exists.add(r.diff);
   }
 
   const ordered = DIFF_ORDER.filter(d => exists.has(d));
-  // DIFF_ORDER 밖에 있는 것들도 혹시 있으면 뒤에 붙임
   const others = [...exists].filter(d => !DIFF_ORDER.includes(d)).sort((a,b)=>a.localeCompare(b,"ko"));
 
   return ["전체", ...ordered, ...others];
 }
 
 
+
 function filterForRanking(){
+  const start = getPeriodStart();
+
   return RAW.filter(r => {
     if (r.isDev) return false;
-    if (STATE.month !== "전체" && r.month !== STATE.month) return false;
+    if (start && (!r.t || r.t < start)) return false;   // ✅ 기간 필터
     if (STATE.size !== "전체" && r.size !== STATE.size) return false;
     if (STATE.diff !== "전체" && r.diff !== STATE.diff) return false;
     if (!r.team) return false;
     return true;
   });
 }
+
 
 
 /**
@@ -283,6 +298,7 @@ function renderRanking(){
   renderTop3(teamRows);
   const hint = el("rankHint");
   hint.textContent = `선택: [${STATE.size}] / [${STATE.diff}] / [${STATE.month || "-"}] · 팀 ${teamRows.length}개`;
+
 
   const body = el("rankBody");
   body.innerHTML = "";
