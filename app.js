@@ -267,13 +267,7 @@ function renderTop3(teamRows){
 
     sub.append(pillNat, pillLoc, pillTs);
 
-    if(r){
-      card.addEventListener("click", ()=>{
-        renderTeamChart(r.map, r.team);
-        el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
-      });
-    }
-    
+   
     card.append(medal, rankLabel, team, score, sub);
 
     box.appendChild(card);
