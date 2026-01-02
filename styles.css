@@ -95,6 +95,8 @@ body{
   transform: rotate(-6deg);
   opacity: .9;
 }
+.topCard::before{ z-index:0; }
+.topCard > *{ position:relative; z-index:1; }
 
 .topCard .medal{
   font-family: var(--cute);
