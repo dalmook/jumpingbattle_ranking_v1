@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>점핑배틀 🏆 랭킹보드</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🏆</div>
+      <div>
+        <div class="title">점핑배틀 랭킹보드</div>
+        <div class="subtitle" id="lastUpdated">불러오는 중…</div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">✨ 알록달록</span>
+      <span class="chip">🧸 키즈모드</span>
+      <span class="chip">🚀 빠른검색</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panelHead">
+        <h2>검색 🔎</h2>
+        <div class="hint">팀명/맵 이름으로 찾아봐!</div>
+      </div>
+
+      <div class="searchRow">
+        <input id="q" class="input" placeholder="예) 오랑우탄 / 소형-베이직 / 산타맵" />
+        <button id="btnSearch" class="btn primary">찾기!</button>
+        <button id="btnClear" class="btn ghost">지우기</button>
+      </div>
+
+      <div class="tableWrap">
+        <table class="table" id="searchTable">
+          <thead>
+            <tr>
+              <th>시간</th><th>팀</th><th>맵</th><th>전국</th><th>지역</th><th>점수</th>
+            </tr>
+          </thead>
+          <tbody id="searchBody">
+            <tr><td colspan="6" class="muted">검색어를 입력하면 결과가 보여요 :)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHead">
+        <h2>맵별 랭킹보드 🎖️</h2>
+        <div class="hint">표에서 팀을 누르면 아래 그래프가 뿅!</div>
+      </div>
+
+      <div class="filters">
+        <div class="filter">
+          <label>사이즈</label>
+          <select id="size">
+            <option>전체</option>
+            <option>소형</option>
+            <option>중형</option>
+            <option>대형</option>
+          </select>
+        </div>
+        <div class="filter">
+          <label>기준</label>
+          <select id="scope">
+            <option>지역</option>
+            <option>전국</option>
+          </select>
+        </div>
+        <div class="filter grow">
+          <div class="pill">정렬: 누적 최고점수(↓) → 선택 랭크(↑) → 팀명</div>
+        </div>
+      </div>
+
+      <div class="boardWrap" id="boardWrap">
+        <div class="muted">데이터를 불러오는 중…</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHead">
+        <h2>랭크 그래프 📈</h2>
+        <div class="hint" id="chartTitle">팀을 선택하면 여기에 표시돼요</div>
+      </div>
+      <div class="chartBox">
+        <canvas id="chart" height="260"></canvas>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Made for kids ✨</span>
+      <span class="dot">•</span>
+      <span>GitHub Pages</span>
+      <span class="dot">•</span>
+      <span>점핑배틀</span>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
