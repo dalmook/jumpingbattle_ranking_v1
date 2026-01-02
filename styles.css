@@ -151,21 +151,6 @@ body{
   font-weight: 900;
 }
 
-.topCard .btnBig{
-  margin-top: 10px;
-  width: 100%;
-  height: 48px;
-  border-radius: 16px;
-  border: 0;
-  cursor: pointer;
-  font-family: var(--cute);
-  font-weight: 900;
-  font-size: 15px;
-  background: linear-gradient(135deg, rgba(108,99,255,.92), rgba(0,194,255,.78));
-  color: #fff;
-  box-shadow: 0 14px 26px rgba(108,99,255,.18);
-}
-
 /* 1등: 더 화려하게 */
 .topCard.top1{
   border-color: rgba(255, 215, 0, .55);
