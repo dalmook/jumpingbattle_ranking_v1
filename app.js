@@ -211,13 +211,67 @@ function buildTeamRows(rows){
 
   return out;
 }
+function renderTop3(teamRows){
+  const box = el("top3");
+  if(!box) return;
+
+  box.innerHTML = "";
+
+  const top = teamRows.slice(0, 3);
+  if(top.length === 0){
+    box.innerHTML = `<div class="muted">TOP3를 만들 데이터가 없어요 😿</div>`;
+    return;
+  }
+
+  const medals = ["🥇", "🥈", "🥉"];
+  const classes = ["top1", "top2", "top3"];
+
+  top.forEach((r, i) => {
+    const nat = Number.isFinite(r.nat) ? r.nat : "-";
+    const loc = Number.isFinite(r.loc) ? r.loc : "-";
+    const score = Number.isFinite(r.score) ? r.score : "-";
+    const rankLabel = (i === 0 ? "1등" : i === 1 ? "2등" : "3등");
+
+    const card = document.createElement("div");
+    card.className = `topCard ${classes[i]}`;
+    card.innerHTML = `
+      <div class="medal">${medals[i]}</div>
+      <div class="rankLabel">${rankLabel}</div>
+      <div class="team">${escapeHtml(r.team)}</div>
+      <div class="score">점수 <b>${score}</b></div>
+
+      <div class="sub">
+        <span class="pill">전국 ${nat}</span>
+        <span class="pill">지점 ${loc}</span>
+        <span class="pill">${escapeHtml(r.ts)}</span>
+      </div>
+
+      <button class="btnBig" type="button">그래프 보기 📈</button>
+    `;
+
+    card.querySelector(".btnBig").addEventListener("click", ()=>{
+      renderTeamChart(r.map, r.team);
+      // 스크롤로 그래프 섹션 살짝 유도
+      el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+
+    // 카드 자체 클릭도 가능하게
+    card.addEventListener("click", (e)=>{
+      if (e.target?.classList?.contains("btnBig")) return;
+      renderTeamChart(r.map, r.team);
+      el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+
+    box.appendChild(card);
+  });
+}
 
 function renderRanking(){
   refreshFilterButtons(); // 버튼 상태/목록 동기화
 
   const rows = filterForRanking();
   const teamRows = buildTeamRows(rows);
-
+  renderTop3(teamRows);
   const hint = el("rankHint");
   hint.textContent = `선택: [${STATE.size}] / [${STATE.diff}] / [${STATE.month || "-"}] · 팀 ${teamRows.length}개`;
 
