@@ -12,6 +12,37 @@ const SIZES = ["전체", "소형", "중형", "대형"];
 // ✅ 난이도(한글 표시) 순서 고정 + 개발중 제거
 const DIFF_ORDER = ["키즈","베이직","여름","이지","우주","노말","산타","하드","챌린저"];
 const PERIODS = ["전체", "오늘", "한달"];
+// ✅ 난이도 → 테마 키 매핑
+const THEME_BY_DIFF = {
+  "키즈": "kids",
+  "베이직": "basic",
+  "여름": "summer",
+  "이지": "easy",
+  "우주": "universe",
+  "노말": "normal",
+  "산타": "santa",
+  "하드": "hard",
+  "챌린저": "challenger",
+};
+
+// ✅ 현재 난이도에 맞춰 테마 적용
+function applyThemeByDiff(diff){
+  const root = document.documentElement;
+
+  // "전체" 또는 비어있으면 기본 테마
+  if (!diff || diff === "전체") {
+    delete root.dataset.theme;
+    return;
+  }
+
+  const key = THEME_BY_DIFF[diff];
+  if (!key) {
+    delete root.dataset.theme;
+    return;
+  }
+
+  root.dataset.theme = key;
+}
 
 function getPeriodStart(){
   const now = new Date();
@@ -288,6 +319,7 @@ function renderTop3(teamRows){
 
 
 function renderRanking(){
+  applyThemeByDiff(STATE.diff);
   refreshFilterButtons(); // 버튼 상태/목록 동기화
 
   const rows = filterForRanking();
