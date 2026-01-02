@@ -156,24 +156,35 @@ body{
 .seg::-webkit-scrollbar-thumb{background:rgba(0,0,0,.10); border-radius:999px}
 
 .segBtn{
-  border:1px solid rgba(0,0,0,.10);
+  border:2px solid rgba(0,0,0,.10);
   background: #fff;
   border-radius:999px;
-  padding:10px 12px;
+  padding:14px 18px;
+  min-height:56px;
   cursor:pointer;
   font-family:var(--cute);
   font-weight:900;
-  font-size:13px;
+  font-size:16px;
   white-space:nowrap;
-  transition: transform .06s ease;
+  transition: transform .06s ease, box-shadow .12s ease;
+  box-shadow: 0 10px 18px rgba(0,0,0,.06);
 }
 .segBtn:active{transform: scale(.98);}
 .segBtn.on{
   border-color: transparent;
   color:#fff;
   background: linear-gradient(135deg, rgba(108,99,255,.95), rgba(0,194,255,.80));
-  box-shadow: 0 10px 24px rgba(108,99,255,.18);
+  box-shadow: 0 16px 30px rgba(108,99,255,.22);
 }
+
+/* ✅ 랭킹 테이블은 전부 중앙 정렬(요청사항) */
+#rankTable th, #rankTable td{ text-align:center; }
+#rankTable .teamBtn{
+  display:inline-flex;
+  justify-content:center;
+  width:100%;
+}
+#rankTable .teamCell{ text-align:center; }
 
 .miniNote{
   margin-top:10px;
@@ -184,6 +195,40 @@ body{
 .miniNote .dot{
   width:10px; height:10px; border-radius:999px;
   background: linear-gradient(135deg, var(--primary), var(--pink));
+}
+/* ✅ TOP 1~3 하이라이트 */
+#rankTable tbody tr.topRow td{
+  border-top:2px solid rgba(0,0,0,.06);
+  border-bottom:2px solid rgba(0,0,0,.06);
+}
+
+#rankTable tbody tr.top1 td{
+  background: linear-gradient(135deg, rgba(255, 215, 0, .22), rgba(255, 90, 165, .10));
+  box-shadow: inset 0 0 0 2px rgba(255,215,0,.35), 0 10px 22px rgba(255,215,0,.10);
+  animation: shimmer 2.8s linear infinite;
+  background-size: 200% 200%;
+}
+#rankTable tbody tr.top2 td{
+  background: linear-gradient(135deg, rgba(170, 200, 255, .22), rgba(108,99,255,.10));
+  box-shadow: inset 0 0 0 2px rgba(170,200,255,.35), 0 10px 22px rgba(108,99,255,.10);
+  animation: shimmer 3.2s linear infinite;
+  background-size: 200% 200%;
+}
+#rankTable tbody tr.top3 td{
+  background: linear-gradient(135deg, rgba(255, 170, 210, .20), rgba(255, 199, 0, .10));
+  box-shadow: inset 0 0 0 2px rgba(255,170,210,.30), 0 10px 22px rgba(255,90,165,.10);
+  animation: shimmer 3.6s linear infinite;
+  background-size: 200% 200%;
+}
+
+/* 모서리 살짝 둥글게 */
+#rankTable tbody tr.topRow td:first-child{ border-top-left-radius:16px; border-bottom-left-radius:16px; }
+#rankTable tbody tr.topRow td:last-child{ border-top-right-radius:16px; border-bottom-right-radius:16px; }
+
+@keyframes shimmer{
+  0%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+  100%{ background-position: 0% 50%; }
 }
 
 .chartBox{
