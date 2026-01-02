@@ -125,9 +125,6 @@ function setButtons(containerId, items, activeValue, onClick){
 }
 
 function refreshFilterButtons(){
-  // 월 버튼: 데이터에 있는 월들
-// ✅ 월 버튼: "전체" + 데이터에 있는 월들
-function refreshFilterButtons(){
   // ✅ 기간 버튼: 전체/오늘/한달
   if (!PERIODS.includes(STATE.month)) STATE.month = "전체";
 
