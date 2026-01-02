@@ -372,16 +372,7 @@ function renderRanking(){
     renderTeamChart(b.dataset.map, b.dataset.team);
     el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
   };
-;
 
-  // 팀 클릭 → 그래프
-  body.querySelectorAll(".teamBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const team = btn.dataset.team;
-      const map = btn.dataset.map;
-      renderTeamChart(map, team);
-    });
-  });
 }
 
 function textIncludes(hay, q){
