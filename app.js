@@ -9,6 +9,40 @@ const STATE = {
 };
 
 const SIZES = ["전체", "소형", "중형", "대형"];
+// ✅ 난이도(한글 표시) 순서 고정 + 개발중 제거
+const DIFF_ORDER = ["키즈","베이직","여름","이지","우주","노말","산타","하드","챌린저"];
+
+function normalizeDiff(raw){
+  let s = (raw || "").toString().trim();
+  if (!s) return { diff:"", isDev:false };
+
+  // "개발중" 제거
+  const low = s.toLowerCase();
+  if (s.includes("개발중") || s.includes("개발") || low.includes("dev")) {
+    return { diff:null, isDev:true };
+  }
+
+  // 흔한 표기들 정리
+  s = s.replace(/\s+/g, "");
+  const k = s.toLowerCase();
+
+  // 산타맵류
+  if (s.includes("산타") || k.includes("santa")) return { diff:"산타", isDev:false };
+
+  // 영문/혼용 매핑
+  if (k === "kids" || s.includes("키즈")) return { diff:"키즈", isDev:false };
+  if (k === "basic" || s.includes("베이직")) return { diff:"베이직", isDev:false };
+  if (k === "summer" || s.includes("여름")) return { diff:"여름", isDev:false };
+  if (k === "easy" || s.includes("이지")) return { diff:"이지", isDev:false };
+  if (k === "universe" || s.includes("우주")) return { diff:"우주", isDev:false };
+  if (k === "normal" || s.includes("노말")) return { diff:"노말", isDev:false };
+  if (k === "hard" || s.includes("하드")) return { diff:"하드", isDev:false };
+  if (k.includes("challenger") || s.includes("챌린저")) return { diff:"챌린저", isDev:false };
+
+  // 그 외는 원본 유지(표시만) - 순서 목록엔 없으면 뒤쪽에 정렬됨
+  return { diff: s, isDev:false };
+}
+
 const el = (id) => document.getElementById(id);
 
 function parseTS(ts){
@@ -26,17 +60,29 @@ function monthKey(ts){
 function splitMap(mapName){
   const m = (mapName || "").trim();
   const known = ["소형", "중형", "대형"];
+
   for (const s of known) {
     if (m.startsWith(s + "-")) {
       const rest = m.slice((s + "-").length);
-      return { size: s, diff: rest || "" };
+      const nd = normalizeDiff(rest || "");
+      return { size: s, diff: nd.diff || "", isDev: nd.isDev };
     }
   }
-  // 예외: "산타맵" 처럼 사이즈가 없는 경우
+
+  // 예외: "산타맵" 같이 사이즈 없는 경우
   const idx = m.indexOf("-");
-  if (idx > 0) return { size: m.slice(0, idx), diff: m.slice(idx + 1) };
-  return { size: "기타", diff: m };
+  if (idx > 0) {
+    const size = m.slice(0, idx);
+    const rest = m.slice(idx + 1);
+    const nd = normalizeDiff(rest || "");
+    return { size, diff: nd.diff || "", isDev: nd.isDev };
+  }
+
+  // "-" 자체가 없으면 맵명 전체를 난이도로 취급
+  const nd = normalizeDiff(m);
+  return { size: "기타", diff: nd.diff || "", isDev: nd.isDev };
 }
+
 
 function escapeHtml(s){
   return (s ?? "").toString()
@@ -94,25 +140,34 @@ function refreshFilterButtons(){
 }
 
 function getDiffList(){
-  const set = new Set();
+  const exists = new Set();
+
   for (const r of RAW) {
+    if (r.isDev) continue;
     if (STATE.month && r.month !== STATE.month) continue;
     if (STATE.size !== "전체" && r.size !== STATE.size) continue;
-    if (r.diff) set.add(r.diff);
+    if (r.diff) exists.add(r.diff);
   }
-  return ["전체", ...Array.from(set).sort((a,b)=>a.localeCompare(b,"ko"))];
+
+  const ordered = DIFF_ORDER.filter(d => exists.has(d));
+  // DIFF_ORDER 밖에 있는 것들도 혹시 있으면 뒤에 붙임
+  const others = [...exists].filter(d => !DIFF_ORDER.includes(d)).sort((a,b)=>a.localeCompare(b,"ko"));
+
+  return ["전체", ...ordered, ...others];
 }
+
 
 function filterForRanking(){
   return RAW.filter(r => {
+    if (r.isDev) return false;
     if (STATE.month && r.month !== STATE.month) return false;
     if (STATE.size !== "전체" && r.size !== STATE.size) return false;
     if (STATE.diff !== "전체" && r.diff !== STATE.diff) return false;
-    // 점수/팀은 최소 조건
     if (!r.team) return false;
     return true;
   });
 }
+
 
 /**
  * ✅ 한 행 = 한 팀
@@ -186,13 +241,15 @@ function renderRanking(){
     const loc = Number.isFinite(r.loc) ? r.loc : "-";
     const score = Number.isFinite(r.score) ? r.score : "-";
 
+    const rowCls = rank === 1 ? "topRow top1" : rank === 2 ? "topRow top2" : rank === 3 ? "topRow top3" : "";
+    
     body.insertAdjacentHTML("beforeend", `
-      <tr>
-        <td class="rankNum">${rank <= 3 ? `<span class="badgeTop">${medal}</span>` : `${rank}`}</td>
-        <td>
-          <button class="teamBtn"
-                  data-team="${encodeAttr(r.team)}"
-                  data-map="${encodeAttr(r.map)}">
+      <tr class="${rowCls}">
+        <td class="rankNum">
+          ${rank <= 3 ? `<span class="badgeTop">${medal}</span>` : `${rank}`}
+        </td>
+        <td class="teamCell">
+          <button class="teamBtn" data-team="${encodeAttr(r.team)}" data-map="${encodeAttr(r.map)}">
             ${escapeHtml(r.team)}
           </button>
         </td>
@@ -202,6 +259,7 @@ function renderRanking(){
         <td>${escapeHtml(r.ts)}</td>
       </tr>
     `);
+
   });
 
   // 팀 클릭 → 그래프
@@ -333,10 +391,12 @@ async function boot(){
       map: r.map || "",
       size: sp.size,
       diff: sp.diff,
+      isDev: !!sp.isDev,  // ✅ 개발중 제거용
       nat: (r.nat === "" || r.nat === undefined || r.nat === null) ? null : Number(r.nat),
       loc: (r.loc === "" || r.loc === undefined || r.loc === null) ? null : Number(r.loc),
-      score: (r.score === "" || r.score === undefined || r.score === null) ? null : Number(r.score),
+      score:(r.score=== "" || r.score=== undefined || r.score=== null) ? null : Number(r.score),
     };
+
   });
 
   el("lastUpdated").textContent = `업데이트: ${json.generated_at || "알 수 없음"} · ${json.count || RAW.length}개`;
