@@ -215,56 +215,82 @@ function renderTop3(teamRows){
   const box = el("top3");
   if(!box) return;
 
-  box.innerHTML = "";
+  // ✅ 안전하게 초기화 (HTML 문자열로 안 지움)
+  box.replaceChildren();
 
   const top = teamRows.slice(0, 3);
-  if(top.length === 0){
-    box.innerHTML = `<div class="muted">TOP3를 만들 데이터가 없어요 😿</div>`;
-    return;
-  }
-
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals  = ["🥇", "🥈", "🥉"];
   const classes = ["top1", "top2", "top3"];
 
-  top.forEach((r, i) => {
-    const nat = Number.isFinite(r.nat) ? r.nat : "-";
-    const loc = Number.isFinite(r.loc) ? r.loc : "-";
-    const score = Number.isFinite(r.score) ? r.score : "-";
-    const rankLabel = (i === 0 ? "1등" : i === 1 ? "2등" : "3등");
+  // top3가 3개 미만이어도 카드 자리 유지
+  for(let i=0;i<3;i++){
+    const r = top[i];
 
     const card = document.createElement("div");
     card.className = `topCard ${classes[i]}`;
-    card.innerHTML = `
-      <div class="medal">${medals[i]}</div>
-      <div class="rankLabel">${rankLabel}</div>
-      <div class="team">${escapeHtml(r.team)}</div>
-      <div class="score">점수 <b>${score}</b></div>
+    card.tabIndex = 0;
 
-      <div class="sub">
-        <span class="pill">전국 ${nat}</span>
-        <span class="pill">지점 ${loc}</span>
-        <span class="pill">${escapeHtml(r.ts)}</span>
-      </div>
+    const medal = document.createElement("div");
+    medal.className = "medal";
+    medal.textContent = medals[i];
 
-      <button class="btnBig" type="button">그래프 보기 📈</button>
-    `;
+    const rankLabel = document.createElement("div");
+    rankLabel.className = "rankLabel";
+    rankLabel.textContent = `${i+1}등`;
 
-    card.querySelector(".btnBig").addEventListener("click", ()=>{
-      renderTeamChart(r.map, r.team);
-      // 스크롤로 그래프 섹션 살짝 유도
-      el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
-    });
+    const team = document.createElement("div");
+    team.className = "team";
+    team.textContent = r ? r.team : "-";
 
-    // 카드 자체 클릭도 가능하게
-    card.addEventListener("click", (e)=>{
-      if (e.target?.classList?.contains("btnBig")) return;
-      renderTeamChart(r.map, r.team);
-      el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
-    });
+    const score = document.createElement("div");
+    score.className = "score";
+    score.innerHTML = r ? `점수 <b>${Number.isFinite(r.score) ? r.score : "-"}</b>` : `점수 <b>-</b>`;
 
+    const sub = document.createElement("div");
+    sub.className = "sub";
+
+    const pillNat = document.createElement("span");
+    pillNat.className = "pill";
+    pillNat.textContent = `전국 ${r && Number.isFinite(r.nat) ? r.nat : "-"}`;
+
+    const pillLoc = document.createElement("span");
+    pillLoc.className = "pill";
+    pillLoc.textContent = `지점 ${r && Number.isFinite(r.loc) ? r.loc : "-"}`;
+
+    const pillTs = document.createElement("span");
+    pillTs.className = "pill";
+    pillTs.textContent = r ? r.ts : "-";
+
+    sub.append(pillNat, pillLoc, pillTs);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btnBig";
+    btn.textContent = "그래프 보기 📈";
+
+    // 데이터 없으면 버튼 비활성
+    if(!r){
+      btn.disabled = true;
+      btn.style.opacity = ".5";
+      btn.style.cursor = "not-allowed";
+    } else {
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        renderTeamChart(r.map, r.team);
+        el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      });
+
+      card.addEventListener("click", ()=>{
+        renderTeamChart(r.map, r.team);
+        el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      });
+    }
+
+    card.append(medal, rankLabel, team, score, sub, btn);
     box.appendChild(card);
-  });
+  }
 }
+
 
 function renderRanking(){
   refreshFilterButtons(); // 버튼 상태/목록 동기화
@@ -288,33 +314,65 @@ function renderRanking(){
     return;
   }
 
+  const medals = ["🥇","🥈","🥉"];
+
   teamRows.slice(0, 200).forEach((r, i) => {
     const rank = i + 1;
-    const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
-    const nat = Number.isFinite(r.nat) ? r.nat : "-";
-    const loc = Number.isFinite(r.loc) ? r.loc : "-";
-    const score = Number.isFinite(r.score) ? r.score : "-";
 
-    const rowCls = rank === 1 ? "topRow top1" : rank === 2 ? "topRow top2" : rank === 3 ? "topRow top3" : "";
-    
-    body.insertAdjacentHTML("beforeend", `
-      <tr class="${rowCls}">
-        <td class="rankNum">
-          ${rank <= 3 ? `<span class="badgeTop">${medal}</span>` : `${rank}`}
-        </td>
-        <td class="teamCell">
-          <button class="teamBtn" data-team="${encodeAttr(r.team)}" data-map="${encodeAttr(r.map)}">
-            ${escapeHtml(r.team)}
-          </button>
-        </td>
-        <td><b>${score}</b></td>
-        <td>${nat}</td>
-        <td>${loc}</td>
-        <td>${escapeHtml(r.ts)}</td>
-      </tr>
-    `);
+    const tr = document.createElement("tr");
+    if(rank <= 3) tr.className = `topRow top${rank}`;
 
+    // 랭킹
+    const tdRank = document.createElement("td");
+    tdRank.className = "rankNum";
+    if(rank <= 3){
+      const b = document.createElement("span");
+      b.className = "badgeTop";
+      b.textContent = medals[rank-1];
+      tdRank.appendChild(b);
+    } else {
+      tdRank.textContent = String(rank);
+    }
+
+    // 팀이름(버튼)
+    const tdTeam = document.createElement("td");
+    tdTeam.className = "teamCell";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "teamBtn";
+    btn.dataset.team = r.team;
+    btn.dataset.map = r.map;
+    btn.textContent = r.team;
+    tdTeam.appendChild(btn);
+
+    // 점수
+    const tdScore = document.createElement("td");
+    tdScore.innerHTML = `<b>${Number.isFinite(r.score) ? r.score : "-"}</b>`;
+
+    // 전국랭킹
+    const tdNat = document.createElement("td");
+    tdNat.textContent = Number.isFinite(r.nat) ? String(r.nat) : "-";
+
+    // 지점랭킹
+    const tdLoc = document.createElement("td");
+    tdLoc.textContent = Number.isFinite(r.loc) ? String(r.loc) : "-";
+
+    // 일시
+    const tdTs = document.createElement("td");
+    tdTs.textContent = r.ts;
+
+    tr.append(tdRank, tdTeam, tdScore, tdNat, tdLoc, tdTs);
+    body.appendChild(tr);
   });
+
+  // ✅ 버튼 클릭은 이벤트 위임으로 한번만 (중복 바인딩 방지)
+  body.onclick = (e) => {
+    const b = e.target.closest(".teamBtn");
+    if(!b) return;
+    renderTeamChart(b.dataset.map, b.dataset.team);
+    el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+;
 
   // 팀 클릭 → 그래프
   body.querySelectorAll(".teamBtn").forEach(btn=>{
