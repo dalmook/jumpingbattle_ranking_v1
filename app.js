@@ -5,7 +5,7 @@ let chart;
 const STATE = {
   size: "전체",
   diff: "전체",
-  month: null, // 최신 월로 자동 세팅
+  month: "전체", // ✅ 월 전체 기본
 };
 
 const SIZES = ["전체", "소형", "중형", "대형"];
@@ -111,9 +111,13 @@ function setButtons(containerId, items, activeValue, onClick){
 
 function refreshFilterButtons(){
   // 월 버튼: 데이터에 있는 월들
-  const months = [...new Set(RAW.map(r => r.month))].filter(Boolean).sort().reverse();
-  if (!STATE.month) STATE.month = months[0] || null;
-  if (STATE.month && !months.includes(STATE.month)) STATE.month = months[0] || null;
+// ✅ 월 버튼: "전체" + 데이터에 있는 월들
+  const monthsRaw = [...new Set(RAW.map(r => r.month))].filter(Boolean).sort().reverse();
+  const months = ["전체", ...monthsRaw];
+  
+  // 기본값/유효성 보정
+  if (!STATE.month) STATE.month = "전체";
+  if (!months.includes(STATE.month)) STATE.month = "전체";
 
   // 사이즈 버튼은 고정
   setButtons("sizeSeg", SIZES, STATE.size, (v) => {
@@ -144,7 +148,7 @@ function getDiffList(){
 
   for (const r of RAW) {
     if (r.isDev) continue;
-    if (STATE.month && r.month !== STATE.month) continue;
+    if (STATE.month !== "전체" && r.month !== STATE.month) continue;
     if (STATE.size !== "전체" && r.size !== STATE.size) continue;
     if (r.diff) exists.add(r.diff);
   }
@@ -160,7 +164,7 @@ function getDiffList(){
 function filterForRanking(){
   return RAW.filter(r => {
     if (r.isDev) return false;
-    if (STATE.month && r.month !== STATE.month) return false;
+    if (STATE.month !== "전체" && r.month !== STATE.month) return false;
     if (STATE.size !== "전체" && r.size !== STATE.size) return false;
     if (STATE.diff !== "전체" && r.diff !== STATE.diff) return false;
     if (!r.team) return false;
@@ -263,30 +267,15 @@ function renderTop3(teamRows){
 
     sub.append(pillNat, pillLoc, pillTs);
 
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "btnBig";
-    btn.textContent = "그래프 보기 📈";
-
-    // 데이터 없으면 버튼 비활성
-    if(!r){
-      btn.disabled = true;
-      btn.style.opacity = ".5";
-      btn.style.cursor = "not-allowed";
-    } else {
-      btn.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        renderTeamChart(r.map, r.team);
-        el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
-      });
-
+    if(r){
       card.addEventListener("click", ()=>{
         renderTeamChart(r.map, r.team);
         el("chartTitle")?.scrollIntoView({ behavior:"smooth", block:"start" });
       });
     }
+    
+    card.append(medal, rankLabel, team, score, sub);
 
-    card.append(medal, rankLabel, team, score, sub, btn);
     box.appendChild(card);
   }
 }
@@ -303,11 +292,6 @@ function renderRanking(){
 
   const body = el("rankBody");
   body.innerHTML = "";
-
-  if (!STATE.month) {
-    body.innerHTML = `<tr><td colspan="6" class="muted">월 데이터가 없어요. data.json 확인!</td></tr>`;
-    return;
-  }
 
   if (!teamRows.length) {
     body.innerHTML = `<tr><td colspan="6" class="muted">해당 조건에 데이터가 없어요 😿</td></tr>`;
